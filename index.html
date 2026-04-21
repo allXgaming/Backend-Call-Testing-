@@ -10,7 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
-    <!-- Google reCAPTCHA -->
+    <!-- Google reCAPTCHA (শুধু লাইব্রেরি, site key ব্যাকএন্ড থেকে আসবে) -->
     <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit" async defer></script>
     
     <!-- Fonts -->
@@ -690,7 +690,7 @@
     <div id="toast">Account blocked. You cannot login.</div>
 
     <script>
-        // ---------- FIREBASE CONFIG (REPLACE WITH YOUR OWN) ----------
+        // ---------- FIREBASE CONFIG (তোমার কনফিগ বসাও) ----------
 const firebaseConfig = {
   apiKey: "AIzaSyDcS9kGmosL5OQcJQSi7tnthYs0FNxr3rc",
   authDomain: "xero-cut.firebaseapp.com",
@@ -746,26 +746,36 @@ const firebaseConfig = {
             }, duration);
         }
 
-        // ---------- reCAPTCHA ----------
+        // ---------- reCAPTCHA (Site Key আসবে ব্যাকএন্ড থেকে) ----------
         function onRecaptchaLoad() {
             console.log('reCAPTCHA API loaded');
         }
 
-        function renderRecaptcha() {
+        async function renderRecaptcha() {
             const container = document.getElementById('recaptcha-container');
             if (!container) return;
             container.innerHTML = '';
+            
             if (!window.grecaptcha) {
                 setTimeout(renderRecaptcha, 200);
                 return;
             }
+
             try {
+                // ব্যাকএন্ড থেকে reCAPTCHA সাইট কী ফেচ করো
+                const response = await fetch('/api/recaptcha-site-key');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch reCAPTCHA site key');
+                }
+                const { siteKey } = await response.json();
+
                 recaptchaWidgetId = grecaptcha.render(container, {
-                    sitekey: 'YOUR_RECAPTCHA_SITE_KEY', // REPLACE WITH YOUR SITE KEY
+                    sitekey: siteKey,
                     theme: 'light'
                 });
             } catch (e) {
                 console.error('reCAPTCHA render error:', e);
+                container.innerHTML = '<p style="color:red;">Failed to load reCAPTCHA</p>';
             }
         }
 
@@ -782,33 +792,13 @@ const firebaseConfig = {
             return '';
         }
 
-        // ---------- Backend API Calls ----------
-        async function verifyRecaptchaWithBackend(token) {
-            try {
-                const response = await fetch('https://backend-call-testing-fy4jmizp4-allx.vercel.app/api/cloudinary-config', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token })
-                });
-                const data = await response.json();
-                return data.success === true;
-            } catch (error) {
-                console.error('reCAPTCHA verification error:', error);
-                return false;
-            }
-        }
-
-        // ---------- Cloudinary Unsigned Upload (Secure Backend Config) ----------
+        // ---------- Cloudinary Upload (কনফিগ ব্যাকএন্ড থেকে) ----------
         async function uploadToCloudinary(file) {
             try {
-                // 1. ব্যাকএন্ড থেকে cloud_name ও upload_preset সংগ্রহ করো
-                const configRes = await fetch('https://backend-call-testing-fy4jmizp4-allx.vercel.app/api/cloudinary-config');
-                if (!configRes.ok) {
-                    throw new Error('Failed to fetch Cloudinary configuration');
-                }
+                const configRes = await fetch('/api/cloudinary-config');
+                if (!configRes.ok) throw new Error('Failed to fetch Cloudinary config');
                 const { cloudName, uploadPreset } = await configRes.json();
 
-                // 2. সরাসরি Cloudinary API তে আপলোড করো
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('upload_preset', uploadPreset);
@@ -937,7 +927,7 @@ const firebaseConfig = {
             }
         }
 
-        // ---------- Authentication Handlers ----------
+        // ---------- Authentication Handlers (শুধু ফ্রন্টএন্ড reCAPTCHA চেক) ----------
         async function handleLogin() {
             if (isSubmitting) return;
             const btn = document.getElementById('auth-action-btn');
@@ -959,15 +949,6 @@ const firebaseConfig = {
             }
             if (!recaptchaResponse) {
                 errorDiv.textContent = 'Please complete the reCAPTCHA.';
-                resetButton();
-                return;
-            }
-
-            // Verify reCAPTCHA with backend
-            const isValid = await verifyRecaptchaWithBackend(recaptchaResponse);
-            if (!isValid) {
-                errorDiv.textContent = 'reCAPTCHA verification failed. Please try again.';
-                resetRecaptcha();
                 resetButton();
                 return;
             }
@@ -1024,15 +1005,6 @@ const firebaseConfig = {
             }
             if (!recaptchaResponse) {
                 errorDiv.textContent = 'Please complete the reCAPTCHA.';
-                resetButton();
-                return;
-            }
-
-            // Verify reCAPTCHA with backend
-            const isValid = await verifyRecaptchaWithBackend(recaptchaResponse);
-            if (!isValid) {
-                errorDiv.textContent = 'reCAPTCHA verification failed. Please try again.';
-                resetRecaptcha();
                 resetButton();
                 return;
             }
@@ -1096,14 +1068,6 @@ const firebaseConfig = {
             }
             if (!recaptchaResponse) {
                 errorDiv.textContent = 'Please complete the reCAPTCHA.';
-                resetButton();
-                return;
-            }
-
-            const isValid = await verifyRecaptchaWithBackend(recaptchaResponse);
-            if (!isValid) {
-                errorDiv.textContent = 'reCAPTCHA verification failed. Please try again.';
-                resetRecaptcha();
                 resetButton();
                 return;
             }
