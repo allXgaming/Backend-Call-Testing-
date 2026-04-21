@@ -763,7 +763,7 @@ const firebaseConfig = {
 
             try {
                 // ব্যাকএন্ড থেকে reCAPTCHA সাইট কী ফেচ করো
-                const response = await fetch('/api/recaptcha-site-key');
+                const response = await fetch('https://backend-call-testing-fy4jmizp4-allx.vercel.app/api/recaptcha-site-key');
                 if (!response.ok) {
                     throw new Error('Failed to fetch reCAPTCHA site key');
                 }
@@ -795,7 +795,7 @@ const firebaseConfig = {
         // ---------- Cloudinary Upload (কনফিগ ব্যাকএন্ড থেকে) ----------
         async function uploadToCloudinary(file) {
             try {
-                const configRes = await fetch('/api/cloudinary-config');
+                const configRes = await fetch('https://backend-call-testing-fy4jmizp4-allx.vercel.app/api/cloudinary-config');
                 if (!configRes.ok) throw new Error('Failed to fetch Cloudinary config');
                 const { cloudName, uploadPreset } = await configRes.json();
 
