@@ -1,15 +1,14 @@
 const cors = require('./cors');
 
 module.exports = async (req, res) => {
-  // CORS ও ডোমেইন লক চেক
+  // CORS middleware কল করবে কিন্তু ডোমেইন চেক করবে না
   if (!cors(req, res)) return;
 
   const url = new URL(req.url, `http://${req.headers.host}`);
   const path = url.pathname;
 
   try {
-    // ---------- GET /api/cloudinary-config ----------
-    // ফ্রন্টএন্ডকে cloud_name ও upload_preset পাঠায়
+    // GET /api/cloudinary-config
     if (path === '/api/cloudinary-config' && req.method === 'GET') {
       const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
       const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET;
@@ -21,8 +20,7 @@ module.exports = async (req, res) => {
       return res.status(200).json({ cloudName, uploadPreset });
     }
 
-    // ---------- POST /api/verify-recaptcha ----------
-    // reCAPTCHA টোকেন ভেরিফাই করে
+    // POST /api/verify-recaptcha
     if (path === '/api/verify-recaptcha' && req.method === 'POST') {
       const secretKey = process.env.RECAPTCHA_SECRET_KEY;
       if (!secretKey) {
@@ -45,7 +43,6 @@ module.exports = async (req, res) => {
       }
     }
 
-    // অন্য কোনো এন্ডপয়েন্ট নাই
     res.status(404).json({ error: 'Endpoint not found' });
   } catch (error) {
     console.error('API Error:', error);
