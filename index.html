@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MR Perfect - Portfolio</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Google reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit" async defer></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --primary: #8b5cf6;
+            --primary-dark: #7c3aed;
+            --primary-light: #a78bfa;
+            --glow-red: #f43f5e;
+            --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.06);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --toast-bg: #1e293b;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            opacity: 0;
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        body.modal-open {
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .container { 
+            width: 100%; min-height: 100vh;
+            padding: 20px; padding-bottom: 50px; margin: 0 auto;
+        }
+
+        .main-layout { display: flex; flex-direction: column; gap: 40px; }
+
+        @media (min-width: 1024px) {
+            .container { max-width: 1150px; padding-top: 50px; }
+            .main-layout {
+                display: grid;
+                grid-template-columns: 340px 1fr;
+                gap: 50px;
+                align-items: start;
+            }
+            .profile-wrapper { position: sticky; top: 50px; }
+        }
+
+        .bottom-section {
+            grid-column: 1 / -1; margin-top: 40px; text-align: center;
+            border-top: 1px solid #e2e8f0; padding-top: 40px;
+        }
+
+        .profile-card {
+            background: var(--bg-card); border-radius: 24px; padding: 40px 25px;
+            text-align: center; box-shadow: var(--shadow-soft); border: 1px solid #fff;
+            transform: translateY(20px);
+            animation: slideUp 0.5s ease forwards;
+        }
+        @keyframes slideUp {
+            to { transform: translateY(0); }
+        }
+        .profile-img {
+            width: 130px; height: 130px; border-radius: 50%; object-fit: cover;
+            border: 4px solid #fff; box-shadow: 0 8px 25px rgba(0,0,0,0.1); margin-bottom: 15px;
+            transition: transform 0.3s ease;
+        }
+        .profile-img:hover {
+            transform: scale(1.05);
+        }
+        .username {
+            font-size: 2rem; font-weight: 800; margin: 5px 0;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .about-btn {
+            background: #fff; color: var(--text-sub); padding: 10px 25px;
+            border-radius: 50px; font-weight: 700; cursor: pointer;
+            border: 1px solid #e2e8f0; margin-top: 10px; transition: var(--transition);
+        }
+        .about-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(139,92,246,0.2); }
+
+        .connect-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+        .social-bubble {
+            width: 48px; height: 48px; background: #fff; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; border: 1px solid #f1f5f9;
+            transition: var(--transition);
+        }
+        .social-bubble:hover { transform: translateY(-6px) scale(1.1); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .social-bubble svg { width: 22px; height: 22px; fill: var(--text-sub); transition: fill 0.2s; }
+        .social-bubble:hover svg { fill: var(--primary); }
+
+        .email-btn {
+            text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(139, 92, 246, 0.08); color: var(--primary);
+            padding: 12px 24px; border-radius: 16px; font-weight: 700; margin-top: 25px;
+            font-size: 0.9rem; border: 1px solid rgba(139, 92, 246, 0.1);
+            transition: var(--transition);
+        }
+        .email-btn:hover { background: rgba(139, 92, 246, 0.15); transform: translateY(-2px); box-shadow: 0 10px 20px rgba(139,92,246,0.15); }
+
+        .section-label { 
+            font-size: 0.85rem; font-weight: 800; letter-spacing: 1.5px; 
+            margin-bottom: 20px; text-transform: uppercase; 
+        }
+        .label-red { color: var(--glow-red); text-shadow: 0 0 15px rgba(244, 63, 94, 0.25); }
+
+        .categories-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .category-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0 0 15px 0;
+            color: var(--text-main);
+            border-left: 6px solid var(--glow-red);
+            padding-left: 15px;
+            animation: slideIn 0.5s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .thumbnail-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 12px;
+            padding: 5px 0 10px 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) #f1f5f9;
+        }
+        .thumbnail-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+        .thumbnail-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        .thumbnail-scroll::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        /* Image protection */
+        .protected-image-container {
+            position: relative;
+            display: inline-block;
+            line-height: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .protected-image-container img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+            -webkit-user-drag: none;
+            user-drag: none;
+        }
+
+        .protected-image-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .protected-image-container::before {
+            content: '© MR PERFECT';
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            font-size: 12px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.01);
+            text-shadow: none;
+            z-index: 3;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        body.devtools-active .protected-image-container img {
+            filter: blur(4px) !important;
+            transition: filter 0.3s;
+        }
+
+        body.devtools-active .protected-image-container::before {
+            opacity: 1;
+            color: rgba(255,255,255,0.8);
+            background: rgba(0,0,0,0.5);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .protected-image-container .big-watermark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 2rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            transform: rotate(-15deg) scale(0);
+            opacity: 0;
+            transition: all 0.2s ease;
+            z-index: 10;
+            pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            border: 3px solid white;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        .protected-image-container.show-big-watermark .big-watermark {
+            transform: rotate(-15deg) scale(1.2);
+            opacity: 1;
+        }
+
+        .protected-image-container .noise-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMTUwIj48ZmlsdGVyIGlkPSJmIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iLjc1IiBudW1PY3RhdmVzPSIzIiAvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbHRlcj0idXJsKCNmKSIgb3BhY2l0eT0iMC4wMiIgLz48L3N2Zz4=');
+            background-size: cover;
+            opacity: 0.02;
+            pointer-events: none;
+            z-index: 4;
+            mix-blend-mode: overlay;
+        }
+
+        .thumbnail-item {
+            flex: 0 0 auto;
+            width: 300px;
+            height: 170px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: default;
+        }
+        .thumbnail-item:hover {
+            transform: scale(1.03) translateY(-4px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        .nav-btn-float {
+            position: fixed; top: 20px; left: 20px; z-index: 2000;
+            width: 45px; height: 45px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            transition: var(--transition);
+        }
+        .nav-btn-float:hover { background: white; transform: scale(1.1); box-shadow: 0 12px 28px rgba(0,0,0,0.15); }
+
+        .page-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #f8fafc; z-index: 1000; display: flex; flex-direction: column;
+            overflow: hidden; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .scroll-content { 
+            flex: 1; overflow-y: auto; padding: 25px; padding-top: 80px; 
+            width: 100%; max-width: 800px; margin: 0 auto;
+        }
+
+        /* Auth Modal */
+        .auth-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); z-index: 3000;
+            display: flex; align-items: center; justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .auth-card {
+            background: #fff; width: 90%; max-width: 420px; padding: 30px;
+            border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            transform: scale(0.95);
+            animation: scaleIn 0.3s ease forwards;
+        }
+        @keyframes scaleIn {
+            to { transform: scale(1); }
+        }
+        .auth-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            transition: transform 0.2s;
+        }
+        .auth-close:hover {
+            transform: scale(1.1);
+        }
+        .auth-close svg {
+            width: 18px;
+            height: 18px;
+            stroke: #0f172a;
+            stroke-width: 2;
+        }
+        .auth-card h2 {
+            margin-top: 0;
+            color: var(--text-main);
+            font-size: 1.8rem;
+            text-align: center;
+        }
+        .auth-card input {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+        .auth-card input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(139,92,246,0.1);
+        }
+        .file-upload-wrapper {
+            text-align: center;
+            margin: 15px 0;
+        }
+        .file-upload-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: #fff;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .file-upload-label:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(139,92,246,0.3);
+        }
+        #auth-photo {
+            position: absolute;
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            overflow: hidden;
+            z-index: -1;
+        }
+        .profile-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 10px auto;
+            border: 3px solid #e2e8f0;
+            display: none;
+        }
+        .profile-preview.show {
+            display: block;
+        }
+        .auth-card button {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 10px;
+            position: relative;
+        }
+        .auth-card button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .recaptcha-container {
+            margin: 15px 0;
+            display: flex;
+            justify-content: center;
+            min-height: 78px;
+        }
+        .switch-link, .forgot-link {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .switch-link { color: var(--primary); font-weight: 700; }
+        .forgot-link { color: var(--text-sub); }
+        .switch-link:hover, .forgot-link:hover { text-decoration: underline; }
+        .error-msg { color: var(--glow-red); font-size: 0.85rem; text-align: center; }
+
+        /* Chat Modal */
+        .chat-modal-wrap { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); z-index: 3000; 
+            display: flex; align-items: center; justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .chat-modal-card { 
+            background: #fff; width: 90%; max-width: 450px; height: 80vh; display: flex; flex-direction: column; 
+            border-radius: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); 
+            border: 1px solid #e2e8f0; 
+            transform: scale(0.95);
+            animation: scaleIn 0.3s ease forwards;
+            overflow: hidden;
+        }
+        .chat-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+        .chat-header h3 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+        .chat-header button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+            transition: var(--transition);
+        }
+        .chat-header button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: rotate(90deg);
+        }
+        .chat-header svg {
+            width: 20px;
+            height: 20px;
+            stroke: white;
+        }
+        #chat-history { 
+            flex: 1; overflow-y: auto; background: #f8fafc; padding: 20px; 
+            display: flex; flex-direction: column; gap: 12px; 
+        }
+        .msg {
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            max-width: 80%;
+            word-wrap: break-word;
+            animation: popIn 0.2s ease;
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .msg.me {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #fff;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .msg.admin {
+            background: #fff;
+            color: #1e293b;
+            align-self: flex-start;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            border-bottom-left-radius: 4px;
+        }
+        .chat-footer {
+            display: flex; gap: 10px; padding: 15px 20px;
+            background: #fff;
+            border-top: 1px solid #e2e8f0;
+        }
+        .chat-footer input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 50px;
+            font-size: 0.95rem;
+            transition: var(--transition);
+        }
+        .chat-footer input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(139,92,246,0.1);
+        }
+        .chat-footer button {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+        .chat-footer button:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
+        .chat-footer button svg {
+            width: 20px;
+            height: 20px;
+            stroke: white;
+        }
+
+        /* Custom Toast */
+        #toast {
+            visibility: hidden;
+            min-width: 300px;
+            background: var(--toast-bg);
+            color: #fff;
+            text-align: center;
+            border-radius: 50px;
+            padding: 16px 24px;
+            position: fixed;
+            z-index: 5000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%) scale(0.9);
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+
+        .hidden { display: none !important; }
+
+        .skeleton { background: linear-gradient(90deg, #e2e8f0 25%, #cbd5e1 50%, #e2e8f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 12px; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        footer { font-size: 0.85rem; font-weight: 600; color: #94a3b8; }
+    </style>
+</head>
+<body>
+
+    <!-- SKELETON LOADING -->
+    <div id="skeleton-view" class="container" style="max-width: 500px; margin: 0 auto;">
+        <div class="skeleton" style="height: 280px; margin-bottom: 30px;"></div>
+        <div class="skeleton" style="height: 30px; width: 120px; margin-bottom: 20px;"></div>
+        <div class="skeleton" style="height: 200px; margin-bottom: 20px;"></div>
+        <div class="skeleton" style="height: 150px;"></div>
+    </div>
+
+    <!-- MAIN VIEW -->
+    <div id="main-view" class="container hidden">
+        <div class="main-layout">
+            <div class="profile-wrapper">
+                <div class="profile-card">
+                    <img id="u-profile-pic" class="profile-img" src="" alt="profile">
+                    <h1 id="u-username" class="username">...</h1>
+                    <button class="about-btn" onclick="openPage('about-page')">About Me</button>
+                    <div class="section-label" style="color:#94a3b8; margin-top:30px; margin-bottom:15px">Connect With Me</div>
+                    <div id="u-connect-top" class="connect-row"></div>
+                    <a href="mailto:mrperfectguide.in@gmail.com" class="email-btn" id="profile-email">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        <span id="profile-email-text">mrperfectguide.in@gmail.com</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+                <div class="section-label label-red" style="text-align:left">Samples</div>
+                <div id="categories-container" class="categories-container"></div>
+            </div>
+
+            <div class="bottom-section">
+                <div class="section-label" style="text-align:center; color:#94a3b8;">Follow Me</div>
+                <div id="u-connect-bottom" class="connect-row"></div>
+                <br>
+                <footer>&copy; 2026 MR Perfect</footer>
+            </div>
+        </div> 
+    </div>
+
+    <!-- ABOUT PAGE -->
+    <div id="about-page" class="page-overlay hidden">
+        <button class="nav-btn-float" onclick="closePage('about-page')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="24" height="24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </button>
+        <button class="nav-btn-float" style="left:auto; right:20px; color:var(--primary);" onclick="openChat()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="24" height="24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+        </button>
+        <div class="scroll-content">
+            <h1 class="username" style="font-size:2.5rem; text-align:left; margin-bottom:20px">About Me</h1>
+            <p id="u-about-text" style="line-height:1.8; color:var(--text-sub); font-size:1.1rem; white-space:pre-wrap;">Loading...</p>
+        </div>
+    </div>
+
+    <!-- AUTH MODAL -->
+    <div id="auth-modal" class="auth-modal hidden">
+        <div class="auth-card" id="auth-card"></div>
+    </div>
+
+    <!-- CHAT MODAL -->
+    <div id="chat-modal" class="chat-modal-wrap hidden">
+        <div class="chat-modal-card">
+            <div class="chat-header">
+                <h3>Support Chat</h3>
+                <button onclick="closeChatModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div id="chat-history"></div>
+            <div class="chat-footer" id="chat-footer">
+                <input id="chat-input" type="text" placeholder="Type a message..." maxlength="500">
+                <button onclick="sendMsg()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Toast -->
+    <div id="toast">Account blocked. You cannot login.</div>
+
+    <script>
+        // ---------- FIREBASE CONFIG (REPLACE WITH YOUR OWN) ----------
+const firebaseConfig = {
+  apiKey: "AIzaSyDcS9kGmosL5OQcJQSi7tnthYs0FNxr3rc",
+  authDomain: "xero-cut.firebaseapp.com",
+  projectId: "xero-cut",
+  storageBucket: "xero-cut.firebasestorage.app",
+  messagingSenderId: "123329452439",
+  appId: "1:123329452439:web:f99b67d03e0ccc8ed18cd2",
+  measurementId: "G-EGB60VYNF5"
+};
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // ---------- Global Variables ----------
+        let isChatCooldown = false;
+        let currentAuthMode = 'login';
+        let currentUser = null;
+        let unsubscribeChat = null;
+        let isSubmitting = false;
+        let recaptchaWidgetId = null;
+
+        // ---------- Utility Functions ----------
+        function showSkeleton(show) {
+            document.getElementById('skeleton-view').classList.toggle('hidden', !show);
+            document.getElementById('main-view').classList.toggle('hidden', show);
+        }
+
+        function lockBodyScroll(lock) {
+            document.body.classList.toggle('modal-open', lock);
+        }
+
+        function openPage(pageId) {
+            document.getElementById(pageId).classList.remove('hidden');
+            lockBodyScroll(true);
+        }
+
+        function closePage(pageId) {
+            document.getElementById(pageId).classList.add('hidden');
+            const anyOpen = ['about-page', 'chat-modal', 'auth-modal'].some(id => 
+                !document.getElementById(id).classList.contains('hidden')
+            );
+            if (!anyOpen) {
+                lockBodyScroll(false);
+            }
+        }
+
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+
+        // ---------- reCAPTCHA ----------
+        function onRecaptchaLoad() {
+            console.log('reCAPTCHA API loaded');
+        }
+
+        function renderRecaptcha() {
+            const container = document.getElementById('recaptcha-container');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!window.grecaptcha) {
+                setTimeout(renderRecaptcha, 200);
+                return;
+            }
+            try {
+                recaptchaWidgetId = grecaptcha.render(container, {
+                    sitekey: 'YOUR_RECAPTCHA_SITE_KEY', // REPLACE WITH YOUR SITE KEY
+                    theme: 'light'
+                });
+            } catch (e) {
+                console.error('reCAPTCHA render error:', e);
+            }
+        }
+
+        function resetRecaptcha() {
+            if (recaptchaWidgetId !== null && window.grecaptcha) {
+                grecaptcha.reset(recaptchaWidgetId);
+            }
+        }
+
+        function getRecaptchaResponse() {
+            if (recaptchaWidgetId !== null && window.grecaptcha) {
+                return grecaptcha.getResponse(recaptchaWidgetId);
+            }
+            return '';
+        }
+
+        // ---------- Backend API Calls ----------
+        async function verifyRecaptchaWithBackend(token) {
+            try {
+                const response = await fetch('https://backend-call-testing-fy4jmizp4-allx.vercel.app/api/cloudinary-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const data = await response.json();
+                return data.success === true;
+            } catch (error) {
+                console.error('reCAPTCHA verification error:', error);
+                return false;
+            }
+        }
+
+        // ---------- Cloudinary Unsigned Upload (Secure Backend Config) ----------
+        async function uploadToCloudinary(file) {
+            try {
+                // 1. ব্যাকএন্ড থেকে cloud_name ও upload_preset সংগ্রহ করো
+                const configRes = await fetch('https://backend-call-testing-fy4jmizp4-allx.vercel.app/api/cloudinary-config');
+                if (!configRes.ok) {
+                    throw new Error('Failed to fetch Cloudinary configuration');
+                }
+                const { cloudName, uploadPreset } = await configRes.json();
+
+                // 2. সরাসরি Cloudinary API তে আপলোড করো
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', uploadPreset);
+
+                const uploadRes = await fetch(
+                    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+                    { method: 'POST', body: formData }
+                );
+
+                if (!uploadRes.ok) {
+                    const errorText = await uploadRes.text();
+                    throw new Error(`Upload failed: ${errorText}`);
+                }
+
+                const data = await uploadRes.json();
+                return data.secure_url;
+            } catch (error) {
+                console.error('Cloudinary upload error:', error);
+                throw error;
+            }
+        }
+
+        // ---------- Auth Modal Management ----------
+        function showAuthModal(mode = 'login') {
+            currentAuthMode = mode;
+            renderAuthModal();
+            document.getElementById('auth-modal').classList.remove('hidden');
+            lockBodyScroll(true);
+            setTimeout(() => {
+                renderRecaptcha();
+            }, 150);
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+            resetRecaptcha();
+            const anyOpen = ['about-page', 'chat-modal'].some(id => 
+                !document.getElementById(id).classList.contains('hidden')
+            );
+            if (!anyOpen) {
+                lockBodyScroll(false);
+            }
+        }
+
+        function renderAuthModal() {
+            const card = document.getElementById('auth-card');
+            if (currentAuthMode === 'login') {
+                card.innerHTML = `
+                    <div class="auth-close" onclick="closeAuthModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </div>
+                    <h2>Login</h2>
+                    <div class="error-msg" id="auth-error"></div>
+                    <input type="email" id="auth-email" placeholder="Email Address" autocomplete="email">
+                    <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password">
+                    <div id="recaptcha-container" class="recaptcha-container"></div>
+                    <button id="auth-action-btn" onclick="handleLogin()">Login</button>
+                    <div class="forgot-link" onclick="showAuthModal('forgot')">Forgot Password?</div>
+                    <div class="switch-link" onclick="showAuthModal('register')">New Account Create</div>
+                `;
+            } else if (currentAuthMode === 'register') {
+                card.innerHTML = `
+                    <div class="auth-close" onclick="closeAuthModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </div>
+                    <h2>Create Account</h2>
+                    <div class="error-msg" id="auth-error"></div>
+                    <img id="profile-preview" class="profile-preview" src="#" alt="Profile preview">
+                    
+                    <div class="file-upload-wrapper">
+                        <label for="auth-photo" class="file-upload-label">Upload Photo</label>
+                        <input type="file" id="auth-photo" accept="image/*" onchange="previewProfilePhoto(event)">
+                    </div>
+
+                    <input type="text" id="auth-name" placeholder="Full Name" autocomplete="name">
+                    <input type="email" id="auth-email" placeholder="Email Address" autocomplete="email">
+                    <input type="password" id="auth-password" placeholder="Password" autocomplete="new-password">
+                    <div id="recaptcha-container" class="recaptcha-container"></div>
+                    <button id="auth-action-btn" onclick="handleRegister()">Register</button>
+                    <div class="switch-link" onclick="showAuthModal('login')">I already have an account</div>
+                `;
+            } else if (currentAuthMode === 'forgot') {
+                card.innerHTML = `
+                    <div class="auth-close" onclick="closeAuthModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </div>
+                    <h2>Reset Password</h2>
+                    <div class="error-msg" id="auth-error"></div>
+                    <input type="email" id="auth-email" placeholder="Email Address" autocomplete="email">
+                    <div id="recaptcha-container" class="recaptcha-container"></div>
+                    <button id="auth-action-btn" onclick="handleForgotPassword()">Send Reset Email</button>
+                    <div class="switch-link" onclick="showAuthModal('login')">Back to Login</div>
+                `;
+            }
+        }
+
+        function previewProfilePhoto(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const preview = document.getElementById('profile-preview');
+                    preview.src = e.target.result;
+                    preview.classList.add('show');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // ---------- Check if user is blocked ----------
+        async function isUserBlocked(uid) {
+            try {
+                const doc = await db.collection('users').doc(uid).get();
+                return doc.exists && doc.data().blocked === true;
+            } catch {
+                return false;
+            }
+        }
+
+        // ---------- Authentication Handlers ----------
+        async function handleLogin() {
+            if (isSubmitting) return;
+            const btn = document.getElementById('auth-action-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Processing...';
+            isSubmitting = true;
+
+            const email = document.getElementById('auth-email')?.value.trim();
+            const password = document.getElementById('auth-password')?.value;
+            const recaptchaResponse = getRecaptchaResponse();
+            const errorDiv = document.getElementById('auth-error');
+            errorDiv.textContent = '';
+
+            if (!email || !password) {
+                errorDiv.textContent = 'Please fill all fields.';
+                resetButton();
+                return;
+            }
+            if (!recaptchaResponse) {
+                errorDiv.textContent = 'Please complete the reCAPTCHA.';
+                resetButton();
+                return;
+            }
+
+            // Verify reCAPTCHA with backend
+            const isValid = await verifyRecaptchaWithBackend(recaptchaResponse);
+            if (!isValid) {
+                errorDiv.textContent = 'reCAPTCHA verification failed. Please try again.';
+                resetRecaptcha();
+                resetButton();
+                return;
+            }
+
+            try {
+                const userCred = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCred.user;
+                const blocked = await isUserBlocked(user.uid);
+                if (blocked) {
+                    await auth.signOut();
+                    showToast('Your account has been blocked. You cannot login.');
+                    closeAuthModal();
+                } else {
+                    closeAuthModal();
+                    if (window.pendingChat) {
+                        window.pendingChat = false;
+                        openChatAfterAuth();
+                    }
+                }
+            } catch (err) {
+                errorDiv.textContent = err.message;
+            } finally {
+                resetButton();
+                resetRecaptcha();
+            }
+
+            function resetButton() {
+                btn.disabled = false;
+                btn.innerText = originalText;
+                isSubmitting = false;
+            }
+        }
+
+        async function handleRegister() {
+            if (isSubmitting) return;
+            const btn = document.getElementById('auth-action-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Uploading...';
+            isSubmitting = true;
+
+            const name = document.getElementById('auth-name')?.value.trim();
+            const email = document.getElementById('auth-email')?.value.trim();
+            const password = document.getElementById('auth-password')?.value;
+            const photoFile = document.getElementById('auth-photo')?.files[0];
+            const recaptchaResponse = getRecaptchaResponse();
+            const errorDiv = document.getElementById('auth-error');
+            errorDiv.textContent = '';
+
+            if (!name || !email || !password || !photoFile) {
+                errorDiv.textContent = 'All fields including photo are required.';
+                resetButton();
+                return;
+            }
+            if (!recaptchaResponse) {
+                errorDiv.textContent = 'Please complete the reCAPTCHA.';
+                resetButton();
+                return;
+            }
+
+            // Verify reCAPTCHA with backend
+            const isValid = await verifyRecaptchaWithBackend(recaptchaResponse);
+            if (!isValid) {
+                errorDiv.textContent = 'reCAPTCHA verification failed. Please try again.';
+                resetRecaptcha();
+                resetButton();
+                return;
+            }
+
+            try {
+                btn.innerText = 'Uploading image...';
+                const photoURL = await uploadToCloudinary(photoFile);
+                
+                btn.innerText = 'Creating account...';
+                const userCred = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCred.user;
+                await user.updateProfile({
+                    displayName: name,
+                    photoURL: photoURL
+                });
+                await db.collection('users').doc(user.uid).set({
+                    name,
+                    email,
+                    photoURL,
+                    blocked: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                closeAuthModal();
+                showToast('Account created successfully!');
+                if (window.pendingChat) {
+                    window.pendingChat = false;
+                    openChatAfterAuth();
+                }
+            } catch (err) {
+                console.error('Register error:', err);
+                errorDiv.textContent = err.message;
+            } finally {
+                resetButton();
+                resetRecaptcha();
+            }
+
+            function resetButton() {
+                btn.disabled = false;
+                btn.innerText = originalText;
+                isSubmitting = false;
+            }
+        }
+
+        async function handleForgotPassword() {
+            if (isSubmitting) return;
+            const btn = document.getElementById('auth-action-btn');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Processing...';
+            isSubmitting = true;
+
+            const email = document.getElementById('auth-email')?.value.trim();
+            const recaptchaResponse = getRecaptchaResponse();
+            const errorDiv = document.getElementById('auth-error');
+            errorDiv.textContent = '';
+
+            if (!email) {
+                errorDiv.textContent = 'Enter your email.';
+                resetButton();
+                return;
+            }
+            if (!recaptchaResponse) {
+                errorDiv.textContent = 'Please complete the reCAPTCHA.';
+                resetButton();
+                return;
+            }
+
+            const isValid = await verifyRecaptchaWithBackend(recaptchaResponse);
+            if (!isValid) {
+                errorDiv.textContent = 'reCAPTCHA verification failed. Please try again.';
+                resetRecaptcha();
+                resetButton();
+                return;
+            }
+
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showToast('Password reset email sent. Check your inbox.');
+                showAuthModal('login');
+            } catch (err) {
+                errorDiv.textContent = err.message;
+            } finally {
+                resetButton();
+                resetRecaptcha();
+            }
+
+            function resetButton() {
+                btn.disabled = false;
+                btn.innerText = originalText;
+                isSubmitting = false;
+            }
+        }
+
+        // ---------- Chat Functions ----------
+        function openChat() {
+            const user = auth.currentUser;
+            if (user) {
+                openChatAfterAuth();
+            } else {
+                window.pendingChat = true;
+                showAuthModal('login');
+            }
+        }
+
+        async function openChatAfterAuth() {
+            const user = auth.currentUser;
+            if (!user) return;
+            const blocked = await isUserBlocked(user.uid);
+            if (blocked) {
+                showToast('Your account has been blocked. You cannot use chat.');
+                return;
+            }
+            document.getElementById('chat-modal').classList.remove('hidden');
+            lockBodyScroll(true);
+            loadChatHistory();
+            setupChatListener();
+        }
+
+        function closeChatModal() {
+            document.getElementById('chat-modal').classList.add('hidden');
+            if (unsubscribeChat) {
+                unsubscribeChat();
+                unsubscribeChat = null;
+            }
+            const anyOpen = ['about-page', 'auth-modal'].some(id => 
+                !document.getElementById(id).classList.contains('hidden')
+            );
+            if (!anyOpen) {
+                lockBodyScroll(false);
+            }
+        }
+
+        async function loadChatHistory() {
+            const user = auth.currentUser;
+            if (!user) return;
+            const chatDiv = document.getElementById('chat-history');
+            chatDiv.innerHTML = '';
+
+            try {
+                const snapshot = await db.collection('messages')
+                    .where('userId', '==', user.uid)
+                    .orderBy('timestamp', 'asc')
+                    .get();
+
+                if (snapshot.empty) {
+                    chatDiv.innerHTML = '<div class="msg admin">Welcome! How can I help you?</div>';
+                } else {
+                    snapshot.forEach(doc => {
+                        const msg = doc.data();
+                        const msgDiv = document.createElement('div');
+                        msgDiv.className = msg.isAdmin ? 'msg admin' : 'msg me';
+                        msgDiv.textContent = msg.text;
+                        chatDiv.appendChild(msgDiv);
+                    });
+                }
+                chatDiv.scrollTop = chatDiv.scrollHeight;
+            } catch (err) {
+                console.warn('Ordered query failed, trying without orderBy:', err);
+                try {
+                    const snapshot = await db.collection('messages')
+                        .where('userId', '==', user.uid)
+                        .get();
+                    
+                    if (snapshot.empty) {
+                        chatDiv.innerHTML = '<div class="msg admin">Welcome! How can I help you?</div>';
+                    } else {
+                        const msgs = [];
+                        snapshot.forEach(doc => msgs.push(doc.data()));
+                        msgs.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+                        msgs.forEach(msg => {
+                            const msgDiv = document.createElement('div');
+                            msgDiv.className = msg.isAdmin ? 'msg admin' : 'msg me';
+                            msgDiv.textContent = msg.text;
+                            chatDiv.appendChild(msgDiv);
+                        });
+                    }
+                    chatDiv.scrollTop = chatDiv.scrollHeight;
+                } catch (fallbackErr) {
+                    console.error('Fallback also failed:', fallbackErr);
+                    chatDiv.innerHTML = '<div class="msg admin">Error loading messages. Please try again later.</div>';
+                }
+            }
+        }
+
+        function setupChatListener() {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const query = db.collection('messages')
+                .where('userId', '==', user.uid);
+
+            unsubscribeChat = query.onSnapshot(() => {
+                loadChatHistory();
+            }, (err) => {
+                console.error('Chat listener error:', err);
+            });
+        }
+
+        function sendMsg() {
+            if (isChatCooldown) return;
+            const user = auth.currentUser;
+            if (!user) {
+                showToast('You must be logged in to chat.');
+                return;
+            }
+            isUserBlocked(user.uid).then(blocked => {
+                if (blocked) {
+                    showToast('Your account has been blocked. You cannot send messages.');
+                    closeChatModal();
+                    return;
+                }
+                const input = document.getElementById('chat-input');
+                const msg = input.value.trim();
+                if (!msg) return;
+                if (msg.length > 500) {
+                    showToast('Message too long (max 500 characters).');
+                    return;
+                }
+
+                isChatCooldown = true;
+                db.collection('messages').add({
+                    userId: user.uid,
+                    userName: user.displayName || 'Anonymous',
+                    text: msg,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    isAdmin: false
+                }).then(() => {
+                    input.value = '';
+                }).catch(err => {
+                    console.error('Error sending message:', err);
+                    showToast('Failed to send message. Please try again.');
+                }).finally(() => {
+                    setTimeout(() => {
+                        isChatCooldown = false;
+                    }, 2000);
+                });
+            });
+        }
+
+        // ---------- Load Profile Data ----------
+        async function loadProfile() {
+            try {
+                const profileDoc = await db.collection('portfolio').doc('main').get();
+                if (profileDoc.exists) {
+                    const data = profileDoc.data() || {};
+                    document.getElementById('u-profile-pic').src = data.profilePic || 'https://via.placeholder.com/130';
+                    document.getElementById('u-username').textContent = data.username || 'MR Perfect';
+                    document.getElementById('u-about-text').textContent = data.about || 'No about info.';
+                    
+                    const connectTop = data.connectTop || [];
+                    const connectTopContainer = document.getElementById('u-connect-top');
+                    connectTopContainer.innerHTML = '';
+                    connectTop.sort((a,b) => (a.order || 0) - (b.order || 0));
+                    connectTop.forEach(item => {
+                        if (item.link && item.svg) {
+                            const bubble = document.createElement('div');
+                            bubble.className = 'social-bubble';
+                            bubble.onclick = () => window.open(item.link, '_blank');
+                            bubble.innerHTML = item.svg;
+                            connectTopContainer.appendChild(bubble);
+                        }
+                    });
+
+                    const followBottom = data.followBottom || [];
+                    const followBottomContainer = document.getElementById('u-connect-bottom');
+                    followBottomContainer.innerHTML = '';
+                    followBottom.sort((a,b) => (a.order || 0) - (b.order || 0));
+                    followBottom.forEach(item => {
+                        if (item.link && item.svg) {
+                            const bubble = document.createElement('div');
+                            bubble.className = 'social-bubble';
+                            bubble.onclick = () => window.open(item.link, '_blank');
+                            bubble.innerHTML = item.svg;
+                            followBottomContainer.appendChild(bubble);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                document.getElementById('u-username').textContent = 'MR Perfect';
+            }
+        }
+
+        // ---------- Load Categories ----------
+        async function loadCategories() {
+            const container = document.getElementById('categories-container');
+            container.innerHTML = '';
+
+            try {
+                const snapshot = await db.collection('categories').orderBy('order', 'asc').get();
+                if (snapshot.empty) {
+                    container.innerHTML = '<p style="color:var(--text-sub); text-align:center;">No samples yet.</p>';
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const cat = doc.data() || {};
+                    const catName = cat.name || 'Unnamed';
+                    const thumbnails = Array.isArray(cat.thumbnails) ? cat.thumbnails : [];
+
+                    const section = document.createElement('div');
+
+                    const title = document.createElement('h3');
+                    title.className = 'category-name';
+                    title.textContent = catName;
+                    section.appendChild(title);
+
+                    const scrollDiv = document.createElement('div');
+                    scrollDiv.className = 'thumbnail-scroll';
+
+                    if (thumbnails.length === 0) {
+                        const emptyMsg = document.createElement('p');
+                        emptyMsg.style.color = 'var(--text-sub)';
+                        emptyMsg.textContent = 'No thumbnails in this category.';
+                        scrollDiv.appendChild(emptyMsg);
+                    } else {
+                        const sortedThumbs = [...thumbnails].sort((a, b) => (a.order || 0) - (b.order || 0));
+                        sortedThumbs.forEach(thumb => {
+                            const containerDiv = document.createElement('div');
+                            containerDiv.className = 'thumbnail-item';
+
+                            const protectedContainer = document.createElement('div');
+                            protectedContainer.className = 'protected-image-container';
+
+                            const img = document.createElement('img');
+                            img.src = thumb.url;
+                            img.alt = 'Thumbnail';
+                            img.loading = 'lazy';
+                            img.onerror = function() {
+                                this.onerror = null;
+                                this.src = 'https://via.placeholder.com/300x170?text=Image+Error';
+                            };
+
+                            protectedContainer.appendChild(img);
+
+                            const watermarkDiv = document.createElement('div');
+                            watermarkDiv.className = 'big-watermark';
+                            watermarkDiv.textContent = 'MR PERFECT';
+                            protectedContainer.appendChild(watermarkDiv);
+
+                            const noise = document.createElement('div');
+                            noise.className = 'noise-layer';
+                            protectedContainer.appendChild(noise);
+
+                            containerDiv.appendChild(protectedContainer);
+                            scrollDiv.appendChild(containerDiv);
+                        });
+                    }
+
+                    section.appendChild(scrollDiv);
+                    container.appendChild(section);
+                });
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                container.innerHTML = '<p style="color:red;">Failed to load samples.</p>';
+            }
+        }
+
+        // ---------- Big Watermark Control ----------
+        function showBigWatermark(show) {
+            const containers = document.querySelectorAll('.protected-image-container');
+            containers.forEach(container => {
+                if (show) {
+                    container.classList.add('show-big-watermark');
+                } else {
+                    container.classList.remove('show-big-watermark');
+                }
+            });
+        }
+
+        // ---------- Advanced Protection ----------
+        let printScreenPressed = false;
+        let copyAttempted = false;
+
+        function initProtection() {
+            document.addEventListener('contextmenu', (e) => {
+                if (e.target.closest('.protected-image-container') || e.target.tagName === 'IMG') {
+                    e.preventDefault();
+                }
+            });
+
+            document.addEventListener('dragstart', (e) => {
+                if (e.target.tagName === 'IMG' || e.target.closest('.protected-image-container')) {
+                    e.preventDefault();
+                }
+            });
+
+            document.addEventListener('copy', (e) => {
+                if (e.target.closest('.protected-image-container')) {
+                    e.preventDefault();
+                    showBigWatermark(true);
+                    copyAttempted = true;
+                    setTimeout(() => {
+                        showBigWatermark(false);
+                        copyAttempted = false;
+                    }, 1000);
+                }
+            });
+            document.addEventListener('cut', (e) => {
+                if (e.target.closest('.protected-image-container')) {
+                    e.preventDefault();
+                    showBigWatermark(true);
+                    copyAttempted = true;
+                    setTimeout(() => {
+                        showBigWatermark(false);
+                        copyAttempted = false;
+                    }, 1000);
+                }
+            });
+
+            let devtoolsOpen = false;
+            const threshold = 160;
+
+            function checkDevTools() {
+                const widthDiff = window.outerWidth - window.innerWidth;
+                const heightDiff = window.outerHeight - window.innerHeight;
+                const isOpen = widthDiff > threshold || heightDiff > threshold;
+                
+                if (isOpen && !devtoolsOpen) {
+                    devtoolsOpen = true;
+                    document.body.classList.add('devtools-active');
+                    showBigWatermark(true);
+                } else if (!isOpen && devtoolsOpen) {
+                    devtoolsOpen = false;
+                    document.body.classList.remove('devtools-active');
+                    if (!printScreenPressed && !copyAttempted) {
+                        showBigWatermark(false);
+                    }
+                }
+            }
+
+            setInterval(checkDevTools, 500);
+            window.addEventListener('resize', checkDevTools);
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'F12') {
+                    e.preventDefault();
+                    showBigWatermark(true);
+                    setTimeout(() => showBigWatermark(false), 1000);
+                }
+                if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) {
+                    e.preventDefault();
+                    showBigWatermark(true);
+                    setTimeout(() => showBigWatermark(false), 1000);
+                }
+                if (e.ctrlKey && e.key === 'u') {
+                    e.preventDefault();
+                    showBigWatermark(true);
+                    setTimeout(() => showBigWatermark(false), 1000);
+                }
+                if (e.key === 'PrintScreen' || e.code === 'PrintScreen') {
+                    e.preventDefault();
+                    showBigWatermark(true);
+                    printScreenPressed = true;
+                    setTimeout(() => {
+                        showBigWatermark(false);
+                        printScreenPressed = false;
+                    }, 1000);
+                }
+                if (e.altKey && (e.key === 'PrintScreen' || e.code === 'PrintScreen')) {
+                    e.preventDefault();
+                    showBigWatermark(true);
+                    setTimeout(() => showBigWatermark(false), 1000);
+                }
+                if (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4')) {
+                    e.preventDefault();
+                    showBigWatermark(true);
+                    setTimeout(() => showBigWatermark(false), 1500);
+                }
+            });
+
+            window.addEventListener('beforeprint', () => {
+                showBigWatermark(true);
+            });
+            window.addEventListener('afterprint', () => {
+                showBigWatermark(false);
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (printScreenPressed || copyAttempted) {
+                    setTimeout(() => {
+                        showBigWatermark(false);
+                        printScreenPressed = false;
+                        copyAttempted = false;
+                    }, 500);
+                }
+            });
+        }
+
+        // ---------- Initialization ----------
+        window.onload = async () => {
+            showSkeleton(true);
+            try {
+                await Promise.all([loadProfile(), loadCategories()]);
+            } catch (e) {
+                console.error('Initial load error:', e);
+            } finally {
+                showSkeleton(false);
+                initProtection();
+            }
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (!document.getElementById('auth-modal').classList.contains('hidden')) {
+                    closeAuthModal();
+                } else if (!document.getElementById('chat-modal').classList.contains('hidden')) {
+                    closeChatModal();
+                } else if (!document.getElementById('about-page').classList.contains('hidden')) {
+                    closePage('about-page');
+                }
+            }
+        });
+
+        auth.onAuthStateChanged(user => {
+            currentUser = user;
+            if (!user && !document.getElementById('chat-modal').classList.contains('hidden')) {
+                closeChatModal();
+            }
+        });
+
+        window.onRecaptchaLoad = onRecaptchaLoad;
+    </script>
+</body>
+</html>
