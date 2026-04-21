@@ -9,7 +9,7 @@
       "source": "/api/(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Credentials", "value": "true" },
-        { "key": "Access-Control-Allow-Origin", "value": "https://your-frontend-domain.com" },
+        { "key": "Access-Control-Allow-Origin", "value": "https://তোমার_ফ্রন্টএন্ড_ডোমেইন.com" },
         { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,POST" },
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
       ]
