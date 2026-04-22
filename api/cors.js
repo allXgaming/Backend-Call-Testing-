@@ -1,4 +1,5 @@
 module.exports = (req, res) => {
+  // সব ডোমেইন থেকে রিকোয়েস্ট গ্রহণ করবে
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
